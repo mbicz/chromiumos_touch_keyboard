@@ -1,0 +1,97 @@
+touch-keyboard (1.4.8) unstable; urgency=medium
+
+  * Add Home and End shortcuts to layouts
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Wed, 04 Feb 2026 00:41:35 +0200
+
+touch-keyboard (1.4.7) unstable; urgency=medium
+
+  * Fix systemd and udev configs paths in CMakeLists.txt to be compatible
+    with various Linux distros.
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sat, 08 Nov 2025 00:30:36 +0200
+
+touch-keyboard (1.4.6) unstable; urgency=medium
+
+  * Set force-feedback magnitude and duration from command-line.
+  * Fix minor building issue
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sun, 02 Nov 2025 23:20:04 +0200
+
+touch-keyboard (1.4.5) unstable; urgency=medium
+
+  * Vibration feedback support
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sat, 01 Nov 2025 01:28:52 +0200
+
+touch-keyboard (1.4.4) unstable; urgency=medium
+
+  * Fix some build errors, merged PRs #10, #14, #15
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Wed, 29 Oct 2025 01:54:45 +0200
+
+touch-keyboard (1.4.3) unstable; urgency=medium
+
+  * Add support of Android Yoga Book version
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sun, 26 Oct 2025 13:51:19 +0200
+
+touch-keyboard (1.4.2) unstable; urgency=medium
+
+  * Update csv.h to latest version
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sat, 30 Dec 2023 02:51:08 +0200
+
+touch-keyboard (1.4.1) unstable; urgency=medium
+
+  * layouts: Fix invalid mouse button definitions
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Wed, 20 Jan 2021 23:35:29 +0300
+
+touch-keyboard (1.4) unstable; urgency=medium
+
+  * Make touchpad geometry customizable
+  * Add virtual touchpad buttons along of left and right sides
+  * Move keyboard layouts to separated dir
+  * Add PC-105-like international keyboard layout
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Tue, 19 Jan 2021 02:29:02 +0300
+
+touch-keyboard (1.3) unstable; urgency=medium
+
+  * Remove all unit-tests
+  * Remove android-libbase dependency
+  * Generate udeb package for debian-installer also
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Sat, 26 Dec 2020 18:06:05 +0300
+
+touch-keyboard (1.2.1) unstable; urgency=medium
+
+  * Fix build with debian testing
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 25 Dec 2020 02:28:14 +0300
+
+touch-keyboard (1.2) unstable; urgency=medium
+
+  * Remove PWM settings (handled by kernel driver now)
+  * Update README with build instructions
+  * Remove obsoleted yogabook-specific touch-keyboard-sleep hook
+  * Decrease default verbosity level
+  * Handle exception and exit with failure
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Fri, 18 Dec 2020 01:43:47 +0300
+
+touch-keyboard (1.1) unstable; urgency=medium
+
+  * Implement Fn modifier key emulation
+  * haptic/ff_driver: Don't flood log if no haptic driver found
+  * Add lintian overrides to ignore custom rpath in the binary
+  * Add script to reload module at resume 
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Wed, 02 Dec 2020 01:51:21 +0300
+
+touch-keyboard (1.0) unstable; urgency=medium
+
+  * Initial Release.
+
+ -- Yauhen Kharuzhy <jekhor@gmail.com>  Mon, 23 Nov 2020 01:15:08 +0300
