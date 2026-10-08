@@ -15,6 +15,37 @@
 
 namespace touch_keyboard {
 
+// A minimal uinput device that only reports the tablet-mode switch.
+//
+// Mutter (GNOME) keeps touch mode -- and with it screen auto-rotation --
+// enabled only when the seat has a tablet-mode switch.  The Yoga Book has
+// no such hardware switch, and adding the switch to the fake touchpad does
+// not work: libinput assigns capabilities from udev tags and returns early
+// for touchpads, so a touchpad+switch combo never gets switch capability.
+// A dedicated switch-only device is tagged ID_INPUT_SWITCH and does.
+class TabletModeSwitchDevice : public UinputDevice {
+ public:
+  // Create the uinput device.  Initial switch state is OFF; use
+  // PulseTabletModeOn() to deliver a real toggle once libinput has opened
+  // the device (libinput silently consumes the initial state and dedups
+  // redundant values).
+  void Start() {
+    CreateUinputFD();
+    EnableEventType(EV_SW);
+    EnableSwitchEvent(SW_TABLET_MODE);
+    FinalizeUinputCreation("virtual-tablet-switch");
+  }
+
+  // Emit a short OFF->ON pulse.  Mutter only updates touch mode on switch
+  // toggle events, so keep pulsing to converge even after mutter restarts.
+  void PulseTabletModeOn() const {
+    SendEvent(EV_SW, SW_TABLET_MODE, 0);
+    SendEvent(EV_SYN, SYN_REPORT, 0);
+    SendEvent(EV_SW, SW_TABLET_MODE, 1);
+    SendEvent(EV_SYN, SYN_REPORT, 0);
+  }
+};
+
 class FakeTouchpad : public UinputDevice, public EvdevSource {
  /* Generate a "fake" touchpad device that pulls it's touch events from a sub-
   * region of a larger touch sensor.
@@ -67,6 +98,8 @@ class FakeTouchpad : public UinputDevice, public EvdevSource {
 
   struct hw_config hw_config_;
 
+  // Dedicated tablet-mode switch device (see TabletModeSwitchDevice above).
+  TabletModeSwitchDevice switch_device_;
   // Every FakeTouchpad needs a state machine to interpret incoming events, it
   // is defined and created here as a member of each object.
   mtstatemachine::MtStateMachine sm_;

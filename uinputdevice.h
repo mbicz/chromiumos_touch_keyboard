@@ -62,7 +62,7 @@ class UinputDevice {
   // event type specified in the function name. eg: KEY_ENTER or ABS_MT_SLOT
   bool EnableKeyEvent(int ev_code) const;
   bool EnableAbsEvent(int ev_code) const;
-
+  bool EnableSwitchEvent(int ev_code) const;
   // Clone the EV_ABS event capability of a given evdev device.  The width and
   // height are used to setup the ranges of X and Y coordinates.
   bool CopyABSOutputEvents(int source_evdev_fd, int width, int height,

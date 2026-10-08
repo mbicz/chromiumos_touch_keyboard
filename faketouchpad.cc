@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <chrono>
 #include <math.h>
+#include <thread>
 
 #include "faketouchpad.h"
 
@@ -133,6 +135,24 @@ void FakeTouchpad::Start(std::string const &source_device_path,
 
   // Finally, tell kernel to create the new fake touchpad's uinput device.
   FinalizeUinputCreation(touchpad_device_name);
+
+  // Create a dedicated switch-only uinput device: a touchpad+switch combo
+  // never gets switch capability in libinput (the touchpad dispatch path
+  // returns early, before the switch tag is evaluated).
+  switch_device_.Start();
+
+  // Mutter/libinput only update touch mode on switch *toggle* events; the
+  // initial switch state is silently consumed at device open and redundant
+  // values are deduped.  Pulse the switch 0->1 (first after 5s, well after
+  // libinput has opened the device, then periodically) so mutter always
+  // ends up seeing tablet mode ON, no matter when it opens the device.
+  std::thread([this]() {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    while (true) {
+      switch_device_.PulseTabletModeOn();
+      std::this_thread::sleep_for(std::chrono::seconds(30));
+    }
+  }).detach();
 
   // Loop forever consuming the events coming in from the source device.
   Consume();

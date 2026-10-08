@@ -88,6 +88,20 @@ bool UinputDevice::EnableAbsEvent(int ev_code) const {
   return true;
 }
 
+bool UinputDevice::EnableSwitchEvent(int ev_code) const {
+  // Tell the kernel that this region's uinput device will report a specific
+  // switch event. (eg: SW_TABLET_MODE)
+  int error = syscall_handler_->ioctl(uinput_fd_, UI_SET_SWBIT, ev_code);
+  if (error) {
+    LOG(ERROR) << "Unable to enable EV_SW 0x" << std::hex << ev_code <<
+                  " events (" << std::dec << error << ")\n";
+    return false;
+  }
+  LOG(DEBUG) << "Enabled EV_SW 0x" << std::hex << ev_code << " events\n";
+  return true;
+}
+
+
 bool UinputDevice::CopyABSOutputEvents(int source_evdev_fd,
                                        int width, int height,
 				       int xres, int yres) const {

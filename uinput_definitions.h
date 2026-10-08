@@ -32,4 +32,8 @@ struct uinput_setup {
 };
 #endif
 
+#ifndef UI_SET_SWBIT
+#define UI_SET_SWBIT _IOW(UINPUT_IOCTL_BASE, 10, int)
+#endif
+
 #endif  // TOUCH_KEYBOARD_UINPUT_DEFINITIONS_H_

@@ -1,3 +1,14 @@
+touch-keyboard (1.4.8+yb3) unstable; urgency=medium
+  * Add a dedicated virtual-tablet-switch uinput device that reports
+    SW_TABLET_MODE so GNOME/mutter keeps touch mode (auto-rotation)
+    enabled while the halo strip pointer device exists.  The Yoga Book
+    YB1-X90F has no physical tablet-mode switch, and mutter disables
+    touch mode whenever a pointer is present without one.  The switch
+    is pulsed OFF->ON periodically because mutter only updates touch
+    mode on toggle events; a touchpad+switch combo device would not
+    work since libinput's touchpad path returns before evaluating the
+    switch tag.
+
 touch-keyboard (1.4.8) unstable; urgency=medium
 
   * Add Home and End shortcuts to layouts
