@@ -1,0 +1,14 @@
+# Yoga Book YB1-X90F touch-keyboard fork virtual devices.
+#
+# touch_keyboard_handler creates a virtual tablet-mode switch and pulses
+# SW_TABLET_MODE ON (faketouchpad.cc: first pulse 5s after start, then
+# every 30s) so mutter keeps touch mode (auto-rotation) enabled.  libinput
+# pairs the internal virtual-touchpad with that switch and suspends it
+# while the switch is ON (evdev-mt-touchpad.c: tp_pair_tablet_mode_switch),
+# dropping all trackpad events.  The pulse would therefore freeze the
+# trackpad 5s after every handler (re)start.  Opt the virtual touchpad
+# out of tablet-mode suspension; the switch itself keeps working for
+# mutter's touch-mode logic.
+[touch-keyboard virtual touchpad]
+MatchName=virtual-touchpad
+ModelTabletModeNoSuspend=1

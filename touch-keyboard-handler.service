@@ -1,8 +1,12 @@
 [Unit]
 Description=Touch keyboard handler
-
+StartLimitIntervalSec=0
 [Service]
 WorkingDirectory=/etc/touch_keyboard
 ExecStart=/usr/sbin/touch_keyboard_handler -m 1.0 -D 6
 Type=simple
-
+# The handler exits when the Goodix source device vanishes (mode switches
+# rebind it) or fails to open; retry until it comes back instead of
+# staying dead until the next udev re-add.
+Restart=always
+RestartSec=1

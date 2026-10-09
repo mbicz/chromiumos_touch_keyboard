@@ -27,9 +27,12 @@ include(GNUInstallDirs)
 
 pkg_check_modules(SYSTEMD "systemd")
 pkg_get_variable(SYSTEMD_SYSTEM_UNIT_DIR systemd systemdsystemunitdir)
-
-pkg_check_modules(UDEV "udev")
-pkg_get_variable(UDEV_DIR udev udevdir)
+if(SYSTEMD_SYSTEM_UNIT_DIR STREQUAL "/lib/systemd/system")
+	set(SYSTEMD_SYSTEM_UNIT_DIR "/usr/lib/systemd/system")
+endif()
+if(NOT UDEV_DIR OR UDEV_DIR STREQUAL "/lib/udev")
+	set(UDEV_DIR "/usr/lib/udev")
+endif()
 
 install(TARGETS touch_keyboard_handler
 	DESTINATION "${CMAKE_INSTALL_SBINDIR}")
@@ -45,6 +48,9 @@ install(FILES 60-touch-keyboard.rules
 
 install(FILES 61-evdev-yogabook.hwdb
 	DESTINATION ${UDEV_DIR}/hwdb.d)
+
+install(FILES 61-yogabook.quirks
+	DESTINATION ${CMAKE_INSTALL_DATADIR}/libinput)
 
 install(FILES touch-keyboard-handler.service
 	DESTINATION ${SYSTEMD_SYSTEM_UNIT_DIR})

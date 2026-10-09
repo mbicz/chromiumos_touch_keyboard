@@ -1,3 +1,18 @@
+touch-keyboard (1.4.9+yb1) unstable; urgency=medium
+
+  * Install libinput quirk file 61-yogabook.quirks: opt the virtual-touchpad
+    out of tablet-mode suspension (ModelTabletModeNoSuspend).  libinput
+    pairs the internal virtual touchpad with the pulsed virtual
+    tablet-mode switch and suspends it while the switch is ON, which
+    froze the trackpad 5 seconds after every handler (re)start.  The
+    switch itself keeps working for mutter touch mode (auto-rotation).
+  * touch-keyboard-handler.service: Restart=always with RestartSec=1 and
+    StartLimitIntervalSec=0, so a Goodix source-device disappearance
+    (halo mode switch rebinds) no longer leaves the trackpad dead until
+    the next udev re-add.
+
+ -- Michal Bicz <michal@bicz.net>  Fri, 09 Oct 2026 11:20:00 +0200
+
 touch-keyboard (1.4.8+yb3) unstable; urgency=medium
   * Add a dedicated virtual-tablet-switch uinput device that reports
     SW_TABLET_MODE so GNOME/mutter keeps touch mode (auto-rotation)
@@ -8,6 +23,8 @@ touch-keyboard (1.4.8+yb3) unstable; urgency=medium
     mode on toggle events; a touchpad+switch combo device would not
     work since libinput's touchpad path returns before evaluating the
     switch tag.
+
+ -- Michal Bicz <michal@bicz.net>  Thu, 08 Oct 2026 20:00:00 +0200
 
 touch-keyboard (1.4.8) unstable; urgency=medium
 
