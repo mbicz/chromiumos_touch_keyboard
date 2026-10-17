@@ -91,6 +91,11 @@ int main(int argc, char *argv[]) {
   if (debug_level)
     SetMinimumLogSeverity(DEBUG);
 
+  // Log lines are written to stdout, which is block-buffered while the unit runs
+  // under systemd (stdout is a pipe to journald), so nothing showed up in the
+  // journal until the buffer filled.  Flush line by line instead.
+  setlinebuf(stdout);
+
   LOG(INFO) << "Starting touch_keyboard_handler\n";
 
   LoadHWConfig("touch-hw.csv", hw_config);
