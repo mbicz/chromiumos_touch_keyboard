@@ -11,6 +11,7 @@
 #include "csv.h"
 
 #include "fakekeyboard.h"
+#include "hinge_monitor.h"
 #include "faketouchpad.h"
 #include "haptic/touch_ff_manager.h"
 
@@ -22,6 +23,7 @@ constexpr char kTouchSensorDevicePath[] = "/dev/touch_keyboard";
 using touch_keyboard::FakeTouchpad;
 using touch_keyboard::FakeKeyboard;
 using touch_keyboard::TouchFFManager;
+using touch_keyboard::HingeMonitor;
 
 bool LoadHWConfig(std::string const &hw_config_file, struct touch_keyboard::hw_config &hw_config) {
   io::CSVReader<7,
@@ -110,6 +112,15 @@ int main(int argc, char *argv[]) {
           hw_config.rotation, ff_magnitude, ff_duration_ms);
 
       FakeKeyboard kbd(hw_config, ffManager);
+
+      // Folded poses where the printed keyboard cannot be reached must not
+      // turn accidental contacts into keystrokes; the monitor keeps the
+      // keyboard disabled while the halves are folded shut (hinge angle
+      // near 0) or unfolded past the keyboard (angle > 180).
+      HingeMonitor hinge_monitor;
+      kbd.SetEnabled(!hinge_monitor.Start(
+          [&kbd](bool usable) { kbd.SetEnabled(usable); }));
+
       kbd.Start(kTouchSensorDevicePath, "virtual-keyboard");
       wait(NULL);
     }

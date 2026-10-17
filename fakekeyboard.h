@@ -6,6 +6,7 @@
 #define TOUCH_KEYBOARD_FAKEKEYBOARD_H_
 
 #include <algorithm>
+#include <atomic>
 #include <base_macros.h>
 #include <list>
 #include <stdlib.h>
@@ -181,7 +182,19 @@ class FakeKeyboard : public UinputDevice, public EvdevSource {
   void Start(std::string const &source_device_path,
              std::string const &keyboard_device_name);
 
+  // Enable or disable key generation.  Callers disable the keyboard while the
+  // machine is folded into a pose where the printed keys cannot be reached
+  // (see HingeMonitor); any key currently held down is released and the
+  // touches on the surface are dropped, so nothing is typed by accident.
+  void SetEnabled(bool enabled) { enabled_.store(enabled); }
+
+  bool IsEnabled() const { return enabled_.load(); }
+
  private:
+  // Release every key this keyboard reported as down and forget the touches on
+  // the surface.  Called from Consume() when the keyboard gets disabled.
+  void ReleasePressedKeys();
+
   // This is the workhorse function called by Start() that actually loops to
   // consume the touch events and generate keystrokes.
   void Consume();
@@ -259,6 +272,14 @@ class FakeKeyboard : public UinputDevice, public EvdevSource {
   std::unordered_map<int, FingerData> finger_data_;
 
   bool fn_key_pressed_;
+
+  // Set to false by SetEnabled() while the machine's pose makes the printed
+  // keyboard unreachable; Consume() acts on it on every iteration.
+  std::atomic<bool> enabled_;
+
+  // Tracks whether Consume() already acted on a disable, so the held keys are
+  // released exactly once per disable.
+  bool enabled_processed_;
 
   struct hw_config hw_config_;
 

@@ -1,3 +1,26 @@
+touch-keyboard (1.5.0+yb1) unstable; urgency=medium
+
+  * Disable the Halo touch keyboard while the printed keys are out of reach.
+    The two halves of the machine are joined by a 360-degree hinge and the
+    embedded controller reports the angle between them through hid-sensor-hub
+    ("hinge" channel).  Below 10 degrees the machine is folded shut, above
+    180 degrees it is unfolded past the keyboard (flat on the desk is about
+    178, folded round behind is about 360 reported as 0); in both poses
+    touches on the printed keyboard are accidental and are no longer turned
+    into keystrokes.  Poses are applied with a 5 degree hysteresis band so
+    moving the machine cannot flicker the gate, held keys are released on
+    leaving a usable pose, and the gate stays open if no sensor is present.
+  * Locate that sensor by the label of its first angle channel
+    (in_angl0_label == hinge) instead of by an iio:deviceN number, which
+    follows probe order.
+  * CMakeLists.txt: do not let pkg_get_variable() overwrite an explicitly
+    configured SYSTEMD_SYSTEM_UNIT_DIR when the systemd pkg-config module is
+    absent, and fall back to /usr/lib/systemd/system.
+  * Add hinge_monitor_test exercising the pose thresholds and the hysteresis
+    boundaries.
+
+ -- Michal Bicz <michal@bicz.net>  Thu, 16 Oct 2026 21:05:00 -0700
+
 touch-keyboard (1.4.9+yb1) unstable; urgency=medium
 
   * Install libinput quirk file 61-yogabook.quirks: opt the virtual-touchpad
