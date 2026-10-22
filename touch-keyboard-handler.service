@@ -1,8 +1,20 @@
 [Unit]
 Description=Touch keyboard handler
+# The Halo source (/dev/touch_keyboard, the Goodix touchscreen) is unbound by
+# the kernel's lenovo-yogabook driver whenever the machine is folded into
+# tablet mode or the Halo is switched to pen mode, and rebound afterwards.
+# Run only while it exists: systemd stops the handler when it goes away and
+# udev (SYSTEMD_WANTS in 60-touch-keyboard.rules) starts it when it returns.
+BindsTo=dev-touch_keyboard.device
+After=dev-touch_keyboard.device
+StartLimitIntervalSec=0
 
 [Service]
 WorkingDirectory=/etc/touch_keyboard
 ExecStart=/usr/sbin/touch_keyboard_handler -m 1.0 -D 6
 Type=simple
-
+# The handler exits when a read from the source fails (the unbind above can
+# win the race against systemd noticing the device removal); restart it. With
+# the device gone the restart waits for it instead of spinning.
+Restart=always
+RestartSec=1
