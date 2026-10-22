@@ -38,11 +38,25 @@ enable_testing()
 add_test(NAME hinge_monitor_test COMMAND hinge_monitor_test)
 
 
+# systemd.pc and udev.pc ship in systemd-dev on Debian 13 (trixie) and later,
+# in systemd and udev before. Use them when present, and the standard
+# locations otherwise; an empty directory would break the install() rules.
+# A value given on the command line (-DSYSTEMD_SYSTEM_UNIT_DIR=...) wins.
 pkg_check_modules(SYSTEMD "systemd")
-pkg_get_variable(SYSTEMD_SYSTEM_UNIT_DIR systemd systemdsystemunitdir)
+if(NOT SYSTEMD_SYSTEM_UNIT_DIR AND SYSTEMD_FOUND)
+	pkg_get_variable(SYSTEMD_SYSTEM_UNIT_DIR systemd systemdsystemunitdir)
+endif()
+if(NOT SYSTEMD_SYSTEM_UNIT_DIR)
+	set(SYSTEMD_SYSTEM_UNIT_DIR "/usr/lib/systemd/system")
+endif()
 
 pkg_check_modules(UDEV "udev")
-pkg_get_variable(UDEV_DIR udev udevdir)
+if(NOT UDEV_DIR AND UDEV_FOUND)
+	pkg_get_variable(UDEV_DIR udev udevdir)
+endif()
+if(NOT UDEV_DIR)
+	set(UDEV_DIR "/usr/lib/udev")
+endif()
 
 install(TARGETS touch_keyboard_handler
 	DESTINATION "${CMAKE_INSTALL_SBINDIR}")
