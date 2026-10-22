@@ -32,6 +32,11 @@ FakeKeyboard::FakeKeyboard(struct hw_config &hw_config,
 
   fn_key_pressed_ = false;
 
+  // The hinge gate starts open: the keyboard is usable until a hinge
+  // monitor reports a pose where the printed keys cannot be reached.
+  enabled_.store(true);
+  enabled_processed_ = true;
+
   LoadLayout("layout.csv");
 
   ff_manager_ = &ffManager;
@@ -331,9 +336,50 @@ void FakeKeyboard::EnqueueEvent(Event ev) {
   pending_events_.push_back(ev);
 }
 
+void FakeKeyboard::ReleasePressedKeys() {
+  bool needs_syn = false;
+
+  // Tell the OS that every key we reported as down is up again, otherwise
+  // disabling the keyboard would leave it stuck down.
+  for (auto it = finger_data_.begin(); it != finger_data_.end(); ++it) {
+    if (it->second.down_sent_) {
+      LOG(INFO) << "Releasing held key " << it->second.event_code_ <<
+        " (touch keyboard disabled).\n";
+      SendEvent(EV_KEY, it->second.event_code_, 0);
+      needs_syn = true;
+    }
+  }
+
+  // Forget the touches on the surface and any keystroke that had not been
+  // sent yet: the user is not typing on the surface any more.
+  finger_data_.clear();
+  pending_events_.clear();
+  sm_ = mtstatemachine::MtStateMachine();
+
+  if (needs_syn)
+    SendEvent(EV_SYN, SYN_REPORT, 0);
+}
+
 void FakeKeyboard::Consume() {
   while (1) {
     bool needs_syn = false;
+
+    // While the hinge gate is closed, the printed keys cannot be reached, so
+    // drop the touches instead of turning them into keystrokes.  The source is
+    // still drained so the state machine does not fall behind.
+    if (!IsEnabled()) {
+      if (enabled_processed_) {
+        enabled_processed_ = false;
+        ReleasePressedKeys();
+      }
+      struct input_event ignored_event;
+      GetNextEvent(100, &ignored_event);
+      continue;
+    }
+    if (!enabled_processed_) {
+      enabled_processed_ = true;
+      LOG(INFO) << "Touch keyboard enabled: printed keys are reachable.\n";
+    }
 
     // Compute how long to wait for a timeout. (At most until the next pending
     // event is set to fire)
