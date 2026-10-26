@@ -1,3 +1,20 @@
+touch-keyboard (1.5.0+yb6) unstable; urgency=medium
+
+  * Consume plain F10 in the daemon to cycle the Yoga Book keyboard LED
+    off, half and full using its actual brightness and maximum.
+  * Preserve Fn+F10 input-source switching and consume F10 releases and
+    repeats, including releases forced by the hinge gate.
+  * Add deterministic backlight event, level and interface-failure tests.
+  * Preserve native per-slot ABS delta caches while the hinge gate is closed;
+    suppress held contacts on reopening without losing geometry for a new
+    tracking-ID-only contact. Add native multitouch gate regressions.
+  * Seed native slot geometry from evdev at startup, allowing unchanged-axis
+    new contacts after service restarts without promoting already-held ones.
+  * Recognize only the known Android and Windows Yoga Book keyboard LEDs,
+    preferring the Android interface when both are present.
+
+ -- Michal Bicz <2608098+mbicz@users.noreply.github.com>  Mon, 26 Oct 2026 00:00:00 -0700
+
 touch-keyboard (1.5.0+yb5) unstable; urgency=medium
 
   * Record pressure and contact-size rejection in the touch state so
