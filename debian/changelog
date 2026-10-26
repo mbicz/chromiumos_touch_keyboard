@@ -1,3 +1,14 @@
+touch-keyboard (1.5.0+yb3) unstable; urgency=medium
+
+  * Map Halo function icons to the keys they show.
+  * Gate the Halo touch keyboard by the hinge angle.
+  * Flush log lines so they reach the journal.
+  * Bind the handler unit to its source device.
+  * No virtual tablet-mode switch: the lenovo-yogabook kernel driver reports
+    the back-side hall sensor as SW_TABLET_MODE.
+
+ -- Michal Bicz <michal@bicz.net>  Thu, 22 Oct 2026 05:30:00 -0700
+
 touch-keyboard (1.4.8) unstable; urgency=medium
 
   * Add Home and End shortcuts to layouts
