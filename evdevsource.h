@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "syscallhandler.h"
+#include "statemachine/statemachine.h"
 
 namespace touch_keyboard {
 
@@ -52,6 +53,10 @@ class EvdevSource {
   bool OpenSourceDevice(std::string const &source_device_path);
   // Wait for a new event to come from the source and populate *ev with it.
   bool GetNextEvent(int timeout_ms, struct input_event *ev) const;
+
+  // Seed native per-slot ABS caches after opening an existing evdev source.
+  // Already-held contacts are deliberately not imported as new presses.
+  bool SeedMultitouchState(mtstatemachine::MtStateMachine *state) const;
 
   SyscallHandler *syscall_handler_;
   int source_fd_;

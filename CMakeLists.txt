@@ -37,6 +37,16 @@ add_executable(hinge_monitor_test
 enable_testing()
 add_test(NAME hinge_monitor_test COMMAND hinge_monitor_test)
 
+add_executable(mt_gate_test
+	statemachine/mt_gate_test.cc
+	evdevsource.cc
+	logging.cc
+	statemachine/statemachine.cc
+	statemachine/slot.cc
+	statemachine/eventkey.cc
+	)
+add_test(NAME mt_gate_test COMMAND mt_gate_test)
+
 
 # systemd.pc and udev.pc ship in systemd-dev on Debian 13 (trixie) and later,
 # in systemd and udev before. Use them when present, and the standard

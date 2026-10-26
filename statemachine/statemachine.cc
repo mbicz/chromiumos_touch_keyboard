@@ -27,6 +27,15 @@ bool MtStateMachine::AddEvent(
   return false;
 }
 
+void MtStateMachine::DropContacts() {
+  const EventKey tracking_id(EV_ABS, ABS_MT_TRACKING_ID);
+  for (auto &slot : slots_) {
+    auto it = slot.find(tracking_id);
+    if (it != slot.end())
+      it->second = -1;
+  }
+}
+
 void MtStateMachine::FillSnapshot(
     std::unordered_map<int, struct MtFinger> *out_snapshot) {
   out_snapshot->clear();

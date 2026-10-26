@@ -28,6 +28,23 @@ Edit the numeric code as well as its label, then restart
 `touch-keyboard-handler.service`. Keep the correct US pc104 or International
 pc105 geometry; editing hotkeys does not require changing key rectangles.
 
+Fn is held only by a live, unrejected touch that started on its key. It
+participates immediately, before the 50 ms confirmation checks. Sliding off
+Fn, lifting the finger, or disabling the keyboard releases the modifier.
+Once the pressure or contact-size checks reject a touch, it no longer holds
+Fn; this does not remap key events already queued while Fn was provisional.
+
+The hinge gate releases committed keys and drops pending actions while
+disabled, but continues tracking raw per-slot ABS deltas. Reopening suppresses
+all contacts already held until their next tracking ID, even if they move.
+New contacts retain the slot's cached coordinates and contact size, so typing
+at exactly the same position works without movement to refresh those axes.
+At startup the daemon also seeds those native slot caches with evdev ioctls,
+without promoting already-held contacts. This allows a service restart to
+accept the next tracking-ID-only press at unchanged coordinates. Unsupported
+pressure remains absent, so contact-size validation still applies. Query
+failures warn and leave the affected axes awaiting real source updates.
+
 The icon mappings in both layouts are:
 
 | Fn key | Linux name / code | Intended action |
@@ -44,5 +61,9 @@ do. Desktops commonly handle the microphone, search, radio and input-source
 keys out of the box. `XF86LaunchA`/`XF86LaunchB` may need binding to the
 desktop's overview and application-grid actions (in GNOME:
 `org.gnome.shell.keybindings toggle-overview` and
-`toggle-application-view`). F10 has no visible effect when only one input
+`toggle-application-view`). Fn+F10 has no visible effect when only one input
 source or layout is configured. Plain F1–F12 remain normal function keys.
+
+The deterministic hinge and native multitouch-gate regression tests run with
+`ctest --test-dir build --output-on-failure` after the CMake build, and through
+the Debian package's normal `dh_auto_test` step.

@@ -57,6 +57,10 @@ class SyscallHandler {
       return ::ioctl(fd, request_code, arg1);
     }
 
+    virtual int ioctl(int fd, long request_code, int *arg1) const {
+      return ::ioctl(fd, request_code, arg1);
+    }
+
     virtual int ioctl(int fd, long request_code,
                       struct input_absinfo *arg1) const {
       return ::ioctl(fd, request_code, arg1);

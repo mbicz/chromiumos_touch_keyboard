@@ -30,8 +30,6 @@ FakeKeyboard::FakeKeyboard(struct hw_config &hw_config,
     TouchFFManager &ffManager) :
   hw_config_(hw_config) {
 
-  fn_key_pressed_ = false;
-
   // The hinge gate starts open: the keyboard is usable until a hinge
   // monitor reports a pose where the printed keys cannot be reached.
   enabled_.store(true);
@@ -146,15 +144,17 @@ int FakeKeyboard::GenerateEventForArrivingFinger(
     struct timespec now,
     struct mtstatemachine::MtFinger const &finger, int tid, int *event_code) {
 
+  bool fn_held = FnHeld();
+
   for (unsigned int key_num = 0; key_num < layout_.size(); key_num++) {
     if (layout_[key_num].Contains(finger.x, finger.y)) {
 
-      if (fn_key_pressed_ && layout_[key_num].event_code_fn_)
+      if (fn_held && layout_[key_num].event_code_fn_)
         *event_code = layout_[key_num].event_code_fn_;
       else
         *event_code = layout_[key_num].event_code_;
 
-      LOG(DEBUG) << "fn_key_pressed_: " << fn_key_pressed_ << ", event_code: " <<
+      LOG(DEBUG) << "fn held: " << fn_held << ", event_code: " <<
         *event_code << "\n";
 
       Event ev(*event_code, kKeyDownEvent,
@@ -193,11 +193,8 @@ void FakeKeyboard::HandleLeavingFinger(int tid, FingerData finger,
   // If we're here we either have already sent the key_down event for this
   // finger, or have just marked in guaranteed.  Either way we have to enqueue
   // a guaranteed up event now if there isn't one already.
-  if (!up_event_guaranteed) {
+  if (!up_event_guaranteed)
     EnqueueKeyUpEvent(finger.event_code_, now);
-    if (finger.event_code_ == KEY_FN)
-      fn_key_pressed_ = false;
-  }
 }
 
 void FakeKeyboard::EnqueueKeyUpEvent(int ev_code, timespec now) {
@@ -205,6 +202,15 @@ void FakeKeyboard::EnqueueKeyUpEvent(int ev_code, timespec now) {
                  AddMsToTimespec(now, kEventDelayMS), kOldTID);
   up_event.is_guaranteed_ = true;
   EnqueueEvent(up_event);
+}
+
+bool FakeKeyboard::FnHeld() const {
+  for (auto const &entry : finger_data_) {
+    if (entry.second.event_code_ == KEY_FN &&
+        entry.second.rejection_status_ == RejectionStatus::kNotRejectedYet)
+      return true;
+  }
+  return false;
 }
 
 bool FakeKeyboard::StillOnFirstKey(
@@ -261,9 +267,6 @@ void FakeKeyboard::ProcessIncomingSnapshot(
       data.down_sent_ = false;
       data.rejection_status_ = RejectionStatus::kNotRejectedYet;
 
-      if (event_code == KEY_FN)
-        fn_key_pressed_ = true;
-
       if (key == kNoKey) {
         data.rejection_status_ = RejectionStatus::kRejectTouchdownOffKey;
       } else {
@@ -292,9 +295,6 @@ void FakeKeyboard::ProcessIncomingSnapshot(
           // Send a KeyUp event to cancel any held-down buttons.
           EnqueueKeyUpEvent(
               data_for_tid_it->second.event_code_, now);
-
-          if (data_for_tid_it->second.event_code_ == KEY_FN)
-            fn_key_pressed_ = false;
         }
       }
 
@@ -349,12 +349,10 @@ void FakeKeyboard::ReleasePressedKeys() {
       needs_syn = true;
     }
   }
-
   // Forget the touches on the surface and any keystroke that had not been
   // sent yet: the user is not typing on the surface any more.
   finger_data_.clear();
   pending_events_.clear();
-  sm_ = mtstatemachine::MtStateMachine();
 
   if (needs_syn)
     SendEvent(EV_SYN, SYN_REPORT, 0);
@@ -364,19 +362,24 @@ void FakeKeyboard::Consume() {
   while (1) {
     bool needs_syn = false;
 
-    // While the hinge gate is closed, the printed keys cannot be reached, so
-    // drop the touches instead of turning them into keystrokes.  The source is
-    // still drained so the state machine does not fall behind.
+    // While the hinge gate is closed, keep consuming ABS deltas into the
+    // state machine without generating actions. New contacts may later omit
+    // coordinates/size that have not changed in their native evdev slot.
     if (!IsEnabled()) {
       if (enabled_processed_) {
         enabled_processed_ = false;
         ReleasePressedKeys();
       }
       struct input_event ignored_event;
-      GetNextEvent(100, &ignored_event);
+      if (GetNextEvent(100, &ignored_event))
+        sm_.AddEvent(ignored_event, nullptr);
       continue;
     }
     if (!enabled_processed_) {
+      // Do not resurrect any contact already held when the gate reopened,
+      // even if it moves later. Only a new tracking ID can start typing.
+      // Keep the per-slot ABS cache so that new ID needs no axis jitter.
+      sm_.DropContacts();
       enabled_processed_ = true;
       LOG(INFO) << "Touch keyboard enabled: printed keys are reachable.\n";
     }
@@ -433,9 +436,8 @@ void FakeKeyboard::Consume() {
       std::unordered_map<int, FingerData>::iterator it;
       it = finger_data_.find(next_event.tid_);
       if (it != finger_data_.end()) {
-        // Here we check to see if this event is still valid before firing it
-        // off to the OS.  Currently there is only a pressure check here, but
-        // more could easily be added later.
+        // Reject invalid contacts in the finger data as well as the event,
+        // so a rejected Fn touch cannot keep modifying subsequent keys.
 
         if (it->second.max_pressure_ != -1) {
           // This checks if the maximum pressure a finger reported is within
@@ -447,6 +449,7 @@ void FakeKeyboard::Consume() {
             LOG(INFO) << "Tap rejected!  Pressure of " <<
               it->second.max_pressure_ << " is out of range " <<
               kMinTapPressure << "->" << kMaxTapPressure << "\n";
+            RejectFinger(next_event.tid_, RejectionStatus::kRejectInvalidTouch);
             continue;
           }
         } else {
@@ -456,6 +459,7 @@ void FakeKeyboard::Consume() {
             LOG(INFO) << "Tap rejected!  Diameter of " <<
               it->second.max_touch_major_ << " is out of range " <<
               kMinTapTouchDiameter << "->" << kMaxTapTouchDiameter << "\n";
+            RejectFinger(next_event.tid_, RejectionStatus::kRejectInvalidTouch);
             continue;
           }
 
@@ -495,6 +499,7 @@ void FakeKeyboard::Start(std::string const &source_device_path,
   // Do all the set up steps.
   if (!OpenSourceDevice(source_device_path))
     return;
+  SeedMultitouchState(&sm_);
 
   CreateUinputFD();
   EnableKeyboardEvents();

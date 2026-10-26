@@ -45,6 +45,12 @@ class MtStateMachine {
   bool AddEvent(struct input_event const &ev,
                 std::unordered_map<int, struct MtFinger> *out_snapshot);
 
+  // Forget current contacts until their next ABS_MT_TRACKING_ID, but retain
+  // every slot's axis cache and the selected slot. Evdev reports only deltas,
+  // so a new contact may omit coordinates/size identical to the previous one.
+  // Call after draining input while gated, before accepting new contacts.
+  void DropContacts();
+
   int slot_;
   Slot slots_[kNumSlots];
 

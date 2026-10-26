@@ -116,6 +116,7 @@ enum class RejectionStatus {
   kNotRejectedYet = 0,
   kRejectTouchdownOffKey,
   kRejectMovedOffKey,
+  kRejectInvalidTouch,
   kRejectAlreadyComplete,
 };
 
@@ -143,9 +144,8 @@ struct FingerData {
 
   int event_code_;
 
-  // This Boolean indicates if a "key down" event has already been sent because
-  // of something this finger did, and as a result a "key up" event must be sent
-  // eventually.
+  // A key-down event has been committed for this finger, either sent to
+  // uinput or consumed as a local action. Its release must take the same path.
   bool down_sent_;
 
   // This value indicates the current rejection state of this finger.  When a
@@ -242,6 +242,11 @@ class FakeKeyboard : public UinputDevice, public EvdevSource {
   bool StillOnFirstKey(struct mtstatemachine::MtFinger const & finger,
                        FingerData const & data) const;
 
+  // Whether a finger that touched down on the Fn key is still resting on it.
+  // Derived from the live touches rather than kept in a flag, so a Fn touch
+  // that slid off its key or was dropped cannot leave Fn latched on.
+  bool FnHeld() const;
+
   // This is a convenience function that allows for easy manipulation of
   // timespec structs, which are used to track the deadlines for sending
   // events.  To easily add a few ms to a timespec, you can just call this.
@@ -270,8 +275,6 @@ class FakeKeyboard : public UinputDevice, public EvdevSource {
   // This is a mapping front tracking id's (TIDs) to finger information that
   // persists over the life of a contact to track global stats and information.
   std::unordered_map<int, FingerData> finger_data_;
-
-  bool fn_key_pressed_;
 
   // Set to false by SetEnabled() while the machine's pose makes the printed
   // keyboard unreachable; Consume() acts on it on every iteration.
