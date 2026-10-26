@@ -17,6 +17,7 @@
 
 #include "evdevsource.h"
 #include "haptic/touch_ff_manager.h"
+#include "keyboard_backlight.h"
 #include "statemachine/statemachine.h"
 #include "uinputdevice.h"
 
@@ -195,6 +196,9 @@ class FakeKeyboard : public UinputDevice, public EvdevSource {
   // the surface.  Called from Consume() when the keyboard gets disabled.
   void ReleasePressedKeys();
 
+  // Consume local actions before uinput, for both normal and hinge releases.
+  bool EmitKeyEvent(int code, int value);
+
   // This is the workhorse function called by Start() that actually loops to
   // consume the touch events and generate keystrokes.
   void Consume();
@@ -275,6 +279,8 @@ class FakeKeyboard : public UinputDevice, public EvdevSource {
   // This is a mapping front tracking id's (TIDs) to finger information that
   // persists over the life of a contact to track global stats and information.
   std::unordered_map<int, FingerData> finger_data_;
+
+  KeyboardBacklight backlight_;
 
   // Set to false by SetEnabled() while the machine's pose makes the printed
   // keyboard unreachable; Consume() acts on it on every iteration.

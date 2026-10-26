@@ -14,6 +14,7 @@ add_executable(touch_keyboard_handler
 	evdevsource.cc
 	fakekeyboard.cc
 	hinge_monitor.cc
+	keyboard_backlight.cc
 	faketouchpad.cc
 	uinputdevice.cc
 	haptic/ff_driver.cc
@@ -36,6 +37,13 @@ add_executable(hinge_monitor_test
 	)
 enable_testing()
 add_test(NAME hinge_monitor_test COMMAND hinge_monitor_test)
+
+add_executable(keyboard_backlight_test
+	keyboard_backlight_test.cc
+	keyboard_backlight.cc
+	logging.cc
+	)
+add_test(NAME keyboard_backlight_test COMMAND keyboard_backlight_test)
 
 add_executable(mt_gate_test
 	statemachine/mt_gate_test.cc

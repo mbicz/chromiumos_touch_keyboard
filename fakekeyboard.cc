@@ -336,6 +336,13 @@ void FakeKeyboard::EnqueueEvent(Event ev) {
   pending_events_.push_back(ev);
 }
 
+bool FakeKeyboard::EmitKeyEvent(int code, int value) {
+  if (backlight_.HandleKeyEvent(code, value))
+    return false;
+  SendEvent(EV_KEY, code, value);
+  return true;
+}
+
 void FakeKeyboard::ReleasePressedKeys() {
   bool needs_syn = false;
 
@@ -345,10 +352,14 @@ void FakeKeyboard::ReleasePressedKeys() {
     if (it->second.down_sent_) {
       LOG(INFO) << "Releasing held key " << it->second.event_code_ <<
         " (touch keyboard disabled).\n";
-      SendEvent(EV_KEY, it->second.event_code_, 0);
-      needs_syn = true;
+      needs_syn |= EmitKeyEvent(it->second.event_code_, 0);
     }
   }
+  // A lifted F10 contact may already be gone from finger_data_ while its
+  // queued release is still pending. Closing the gate drops that queue too.
+  backlight_.HandleKeyEvent(KEY_F10, 0);
+
+
   // Forget the touches on the surface and any keystroke that had not been
   // sent yet: the user is not typing on the surface any more.
   finger_data_.clear();
@@ -477,8 +488,7 @@ void FakeKeyboard::Consume() {
 
       LOG(DEBUG) << "Event: EV_KEY, code " << next_event.ev_code_ << " down: " << next_event.is_down_ << "\n";
       // Actually send the event and update the fingerdata if applicable.
-      SendEvent(EV_KEY, next_event.ev_code_, next_event.is_down_ ? 1 : 0);
-      needs_syn = true;
+      needs_syn |= EmitKeyEvent(next_event.ev_code_, next_event.is_down_ ? 1 : 0);
       if (next_event.is_down_) {
         std::unordered_map<int, FingerData>::iterator it;
         it = finger_data_.find(next_event.tid_);
