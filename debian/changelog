@@ -1,3 +1,12 @@
+touch-keyboard (1.5.0+yb4) unstable; urgency=medium
+
+  * Close the hinge gate before the monitor starts, so its first reading
+    cannot be overwritten and leave the keyboard off.
+  * Derive the Fn state from the touches on the surface: a Fn touch that
+    slid off the key no longer leaves Fn latched.
+
+ -- Michal Bicz <michal@bicz.net>  Sun, 25 Oct 2026 19:10:00 -0700
+
 touch-keyboard (1.5.0+yb3) unstable; urgency=medium
 
   * Map Halo function icons to the keys they show.
